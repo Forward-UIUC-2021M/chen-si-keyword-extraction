@@ -4,13 +4,11 @@ from collections import defaultdict
 class AhoCorasick:
     def __init__(self, words):
         self.max_states = sum([len(word) for word in words])
-        self.max_characters = 26
         self.out = [0] * (self.max_states + 1)
         self.fail = [-1] * (self.max_states + 1)
-        self.goto = [[-1] * self.max_characters for _ in range(self.max_states + 1)]
+        self.goto = [{} for _ in range(self.max_states + 1)]
 
-        words = [word.lower() for word in words]
-        self.words = words
+        self.words = [word.lower() for word in words]
 
         self.states_count = self.__build_matching_machine()
 
@@ -23,22 +21,16 @@ class AhoCorasick:
             current_state = 0
 
             for character in word:
-                ch = ord(character) - ord('a')
-
-                if self.goto[current_state][ch] == -1:
-                    self.goto[current_state][ch] = states
+                if character not in self.goto[current_state]:
+                    self.goto[current_state][character] = states
                     states += 1
 
-                current_state = self.goto[current_state][ch]
+                current_state = self.goto[current_state][character]
 
             self.out[current_state] |= (1 << i)
 
-        for ch in range(self.max_characters):
-            if self.goto[0][ch] == -1:
-                self.goto[0][ch] = 0
-
         queue = []
-        for ch in range(self.max_characters):
+        for ch in self.goto[0]:
             if self.goto[0][ch] != 0:
                 self.fail[self.goto[0][ch]] = 0
                 queue.append(self.goto[0][ch])
@@ -46,30 +38,31 @@ class AhoCorasick:
         while queue:
             state = queue.pop(0)
 
-            for ch in range(self.max_characters):
+            for ch in self.goto[state]:
+                failure = self.fail[state]
+                while ch not in self.goto[failure]:
+                    if failure == 0:
+                        break
+                    failure = self.fail[failure]
 
-                if self.goto[state][ch] != -1:
-
-                    failure = self.fail[state]
-                    while self.goto[failure][ch] == -1:
-                        failure = self.fail[failure]
-
+                if failure != 0 or ch in self.goto[failure]:
                     failure = self.goto[failure][ch]
-                    self.fail[self.goto[state][ch]] = failure
-                    self.out[self.goto[state][ch]] |= self.out[failure]
 
-                    queue.append(self.goto[state][ch])
+                self.fail[self.goto[state][ch]] = failure
+
+                self.out[self.goto[state][ch]] |= self.out[failure]
+
+                queue.append(self.goto[state][ch])
 
         return states
 
     def __find_next_state(self, current_state, next_input):
         answer = current_state
-        ch = ord(next_input) - ord('a')
 
-        while self.goto[answer][ch] == -1:
+        while next_input not in self.goto[answer]:
             answer = self.fail[answer]
 
-        return self.goto[answer][ch]
+        return self.goto[answer][next_input]
 
     def search_words(self, text):
         text = text.lower()

@@ -166,11 +166,12 @@ def get_glossary_in_string(glossary_list, string):
 
     trie = construct_trie(glossary_list)
     matches = get_matches_overlap(string, trie)
+    print("done")
     return matches
-    # trie.init_with_list(glossary_list)
 
     # aho = AhoCorasick(glossary_list)
     # result = aho.search_words(string)
+    # print("done")
     # return list(result.keys())
 
 
