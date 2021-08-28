@@ -1,14 +1,11 @@
 from keyword_accuracy import get_keyword_accuracy
 from print_helper import print_result
-from constants import urls
-from pdf_to_string_converter import pdf_to_string_wrapper
 # from Trie import Trie
 from trie_sample import Trie
 from trie_utils import construct_trie, get_matches_overlap
 from Aho_Corasick import AhoCorasick
 from collections import namedtuple
 from difflib import SequenceMatcher
-from statistics import mean, variance
 import csv
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -43,33 +40,12 @@ class KeywordExtractor:
         :param string: pass in single text
         :return: python list of keywords: [strings]
         """
-        # sentences = tokenize.sent_tokenize(string)
-        # sentences = [sentence.lower() for sentence in sentences]
-        # embeddings = model.encode(sentences)
         embeddings = model.encode([string])[0]
-
-        # doc_vec = get_doc_vector(string)
         glossary_list = get_glossary_in_string(self.glossary_list, string)
-
-        # print(glossary_list)
 
         score_list = []
         for word in glossary_list:
             temp_embedding = model.encode([word])[0]
-
-            # total_score = 0
-            # for i in range(len(sentences)):
-            #     total_score += np.power(cosine(temp_embedding, embeddings[i]), 3)
-            #     total_score += cosine(temp_embedding, embeddings[i])
-            # score_list.append(total_score / len(sentences))
-
-            # max_score = 0
-            # for i in range(len(sentences)):
-            #     score = cosine(temp_embedding, embeddings[i])
-            #     if score > max_score:
-            #         max_score = score
-            # score_list.append(max_score)
-
             score = cosine(temp_embedding, embeddings)
             score_list.append(score)
 
@@ -159,8 +135,6 @@ def get_glossary_in_string(glossary_list, string):
     :param string: pass in string
     :return: python list of keywords appeared in pass in string
     """
-    # Trie
-    # Aho-Corasick automaton
 
     # return [glossary for glossary in glossary_list if glossary in string.lower()]
 
@@ -230,16 +204,6 @@ def get_top_keywords(glossary_list, scores, n=10):
 
 
 def main():
-    # test_weight_list = [10, 20, 10, 40, 90]
-
-    # str_list = []
-    # for url in urls:
-    #     str_list.append(pdf_to_string_wrapper(url))
-    #
-    # # keywords = extract_keywords_from_string_list(glossary_list, str_list, test_weight_list)
-    # keywords =  extractor.extract_from_multi_text(str_list, test_weight_list)
-    # print(keywords)
-
     extractor = KeywordExtractor()
     n = 30
 

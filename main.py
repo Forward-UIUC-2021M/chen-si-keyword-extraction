@@ -1,4 +1,4 @@
-from extract_general_keywords import main
+from keyword_extraction import main
 
 
 def test_run():
