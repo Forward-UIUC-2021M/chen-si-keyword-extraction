@@ -11,6 +11,10 @@ local_filename = "download.pdf"
 
 
 def convert_pdf_to_str():
+    """
+    Convert local "download.pdf" to python string
+    :return: python string with content of "download.pdf"
+    """
     resource_manager = PDFResourceManager()
     return_string = StringIO()
     device = TextConverter(resource_manager, return_string, codec='utf-8', laparams=LAParams())
@@ -26,6 +30,11 @@ def convert_pdf_to_str():
 
 
 def download_pdf_from_url(url: str):
+    """
+    From given url download pdf to local
+    :param url: url for pdf downloading
+    :return: void
+    """
     if "drive.google" in url:
         download_pdf_from_google_drive_url(url)
         return
@@ -33,12 +42,22 @@ def download_pdf_from_url(url: str):
 
 
 def download_pdf_from_normal_url(url: str):
+    """
+    Sub-function for condition with url that directly link to a pdf
+    :param url: url for pdf downloading
+    :return: void
+    """
     response = requests.get(url, stream=True)
     with open(local_filename, 'wb') as file:
         file.write(response.content)
 
 
 def download_pdf_from_google_drive_url(url: str):
+    """
+    Sub-function for condition where url is a Google Drive link
+    :param url: url for pdf downloading
+    :return: void
+    """
     file_id = url.split('/')[5]
     url = "https://docs.google.com/uc?export=download"
     session = requests.Session()
@@ -54,6 +73,11 @@ def download_pdf_from_google_drive_url(url: str):
 
 
 def get_confirm_token(response):
+    """
+    Internal function for download_pdf_from_google_drive_url
+    :param response: url request response
+    :return: confirm token
+    """
     for key, value in response.cookies.items():
         if key.startswith('download_warning'):
             return value
@@ -62,6 +86,12 @@ def get_confirm_token(response):
 
 
 def save_response_content(response, destination):
+    """
+    Internal function for download_pdf_from_google_drive_url
+    :param response: url request response
+    :param destination: local filename for storing
+    :return: void
+    """
     chunk_size = 32768
 
     with open(destination, "wb") as f:
@@ -71,11 +101,20 @@ def save_response_content(response, destination):
 
 
 def del_local_download():
+    """
+    CLean-up function for deleting local pdf file
+    :return:
+    """
     if os.path.exists(local_filename):
         os.remove(local_filename)
 
 
 def pdf_to_string_wrapper(url):
+    """
+    Wrapper function for whole process of download pdf convert to string and clean-up
+    :param url: url for pdf download
+    :return: pdf string
+    """
     download_pdf_from_url(url)
     string = convert_pdf_to_str()
     del_local_download()

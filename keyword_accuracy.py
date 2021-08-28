@@ -3,6 +3,12 @@ nlp = spacy.load('en_core_web_md')
 
 
 def get_keyword_accuracy(keyword_list, ref_list):
+    """
+    Calculate assigned keywords accuracy with reference keywords
+    :param keyword_list: assigned keywords
+    :param ref_list: reference keywords
+    :return: accuracy (int 0-100)
+    """
     ref_list_dict = {}
     for ref_word in ref_list:
         ref_list_dict[ref_word] = []
@@ -19,11 +25,16 @@ def get_keyword_accuracy(keyword_list, ref_list):
 
 
 def word_similarity(word1, word2):
+    """
+    Produce similarity score for two words
+    :param word1: input word 1
+    :param word2: input word 2
+    :return: words similarity score (0-1)
+    """
     token1 = nlp(word1)
     token2 = nlp(word2)
 
     score = token1.similarity(token2)
-    # print(score)
     return score
 
 

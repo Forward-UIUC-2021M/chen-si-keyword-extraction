@@ -33,6 +33,24 @@ class KeywordExtractor:
     """
     def __init__(self):
         self.glossary_list = get_glossary_list()
+        self.trie = construct_trie(self.glossary_list)
+
+    def get_glossary_in_string(self, string):
+        """
+        Filter glossaries appeared in given string
+        :param string: pass in string
+        :return: python list of keywords appeared in pass in string
+        """
+
+        # return [glossary for glossary in glossary_list if glossary in string.lower()]
+
+        matches = get_matches_overlap(string, self.trie)
+        return matches
+
+        # aho = AhoCorasick(glossary_list)
+        # result = aho.search_words(string)
+        # print("done")
+        # return list(result.keys())
 
     def extract_from_single_text(self, string):
         """
@@ -41,7 +59,7 @@ class KeywordExtractor:
         :return: python list of keywords: [strings]
         """
         embeddings = model.encode([string])[0]
-        glossary_list = get_glossary_in_string(self.glossary_list, string)
+        glossary_list = self.get_glossary_in_string(string)
 
         score_list = []
         for word in glossary_list:
@@ -126,27 +144,6 @@ def get_glossary_list():
                     continue
             glossary_list_no_repeat.append(word)
     return glossary_list_no_repeat
-
-
-def get_glossary_in_string(glossary_list, string):
-    """
-    Filter glossaries appeared in given string
-    :param glossary_list: pass in glossary list for checking
-    :param string: pass in string
-    :return: python list of keywords appeared in pass in string
-    """
-
-    # return [glossary for glossary in glossary_list if glossary in string.lower()]
-
-    trie = construct_trie(glossary_list)
-    matches = get_matches_overlap(string, trie)
-    print("done")
-    return matches
-
-    # aho = AhoCorasick(glossary_list)
-    # result = aho.search_words(string)
-    # print("done")
-    # return list(result.keys())
 
 
 def cosine(u, v):

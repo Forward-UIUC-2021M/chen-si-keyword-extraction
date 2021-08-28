@@ -6,6 +6,11 @@ db = mysql.connector.connect(user='root',
 
 
 def get_publication_keywords(publication_id):
+    """
+    Get keywords from local MySQL database
+    :param publication_id: given publication id
+    :return: keywords list
+    """
     cursor = db.cursor()
     query = "SELECT FoS_id " \
             "FROM publication_fos " \
@@ -27,6 +32,11 @@ def get_publication_keywords(publication_id):
 
 
 def get_multi_publications(n=30):
+    """
+    Get first n publications abstracts
+    :param n: number of publications need to be select
+    :return: n publication's abstracts
+    """
     cursor = db.cursor()
     query = "SELECT id, abstract " \
             "FROM publication " \

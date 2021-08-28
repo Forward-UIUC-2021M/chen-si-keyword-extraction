@@ -54,6 +54,7 @@ def get_matches_overlap(inp_text, trie, include_counts=False):
         word_start_idx = word_match.start(1)
 
         curr_matches = trie.get_matches(inp_text, word_start_idx)
+        print(curr_matches)
         matches = matches.union(curr_matches)
 
         for keyword in curr_matches:
