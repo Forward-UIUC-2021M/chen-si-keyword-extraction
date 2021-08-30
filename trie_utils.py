@@ -52,9 +52,10 @@ def get_matches_overlap(inp_text, trie, include_counts=False):
     keyword_freqs = {}
     for word_match in word_boundries:
         word_start_idx = word_match.start(1)
+        print(word_match, word_start_idx)
 
         curr_matches = trie.get_matches(inp_text, word_start_idx)
-        print(curr_matches)
+        # print(curr_matches)
         matches = matches.union(curr_matches)
 
         for keyword in curr_matches:

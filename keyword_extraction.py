@@ -1,16 +1,11 @@
-from keyword_accuracy import get_keyword_accuracy
 from print_helper import print_result
-# from Trie import Trie
-from trie_sample import Trie
+from Trie import Trie
 from trie_utils import construct_trie, get_matches_overlap
 from Aho_Corasick import AhoCorasick
-from collections import namedtuple
 from difflib import SequenceMatcher
 import csv
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from gensim.models import doc2vec
-from nltk import tokenize
 from database import get_multi_publications, get_publication_keywords
 
 
@@ -33,7 +28,9 @@ class KeywordExtractor:
     """
     def __init__(self):
         self.glossary_list = get_glossary_list()
-        self.trie = construct_trie(self.glossary_list)
+        # self.trie = construct_trie(self.glossary_list)
+        self.trie = Trie()
+        self.trie.init_with_list(self.glossary_list)
 
     def get_glossary_in_string(self, string):
         """
@@ -44,12 +41,12 @@ class KeywordExtractor:
 
         # return [glossary for glossary in glossary_list if glossary in string.lower()]
 
-        matches = get_matches_overlap(string, self.trie)
+        # matches = get_matches_overlap(string, self.trie)
+        matches = self.trie.string_match(string)
         return matches
 
         # aho = AhoCorasick(glossary_list)
         # result = aho.search_words(string)
-        # print("done")
         # return list(result.keys())
 
     def extract_from_single_text(self, string):
@@ -58,9 +55,12 @@ class KeywordExtractor:
         :param string: pass in single text
         :return: python list of keywords: [strings]
         """
-        embeddings = model.encode([string])[0]
-        glossary_list = self.get_glossary_in_string(string)
 
+        # Sentence Transformer embedding for entire given string
+        embeddings = model.encode([string])[0]
+
+        # Extracting glossaries appeared in the given string and calculate cosine similarity score into score_list
+        glossary_list = self.get_glossary_in_string(string)
         score_list = []
         for word in glossary_list:
             temp_embedding = model.encode([word])[0]
@@ -70,6 +70,7 @@ class KeywordExtractor:
         if len(glossary_list) == 0 or len(glossary_list) == 1:
             return glossary_list
 
+        # Process for eliminating similar keywords
         similar_keyword_index_list = []
         for index in range(len(glossary_list) - 1):
             word = glossary_list[index]
@@ -79,6 +80,7 @@ class KeywordExtractor:
                 temp_word = glossary_list[i]
                 temp_score = score_list[i]
 
+                # using sequence matcher for similarity score
                 str_sim = string_similarity(word, temp_word)
                 if str_sim > 0.5 and abs(score - temp_score) < 0.05:
                     if i not in similar_keyword_index_list:
@@ -97,6 +99,7 @@ class KeywordExtractor:
         :param weight_list: pass in corresponding weighting for string list
         :return: python dict of keywords and its normalized score: {keyword: <0-1 score>}
         """
+        # Using extract_from_single_text method to get each string's keywords
         whole_keywords = {}
         for i in range(len(string_list)):
             keywords = self.extract_from_single_text(string_list[i])
@@ -106,10 +109,12 @@ class KeywordExtractor:
                 else:
                     whole_keywords[keyword] += weight_list[i]
 
+        # Adding weights on string
         total_weight = 0
         for key in whole_keywords:
             total_weight += whole_keywords[key]
 
+        # Normalize keywords based on occurrence times
         for key in whole_keywords:
             whole_keywords[key] /= total_weight
 
@@ -121,8 +126,8 @@ def get_glossary_list():
     Init glossary list using local csv file
     :return: glossary list containing all keywords
     """
+    # Open local glossary file
     glossary_list = []
-
     filename = 'Keywords-Springer-83K.csv'
     with open(filename, 'r', encoding="utf8") as csv_file:
         csv_reader = csv.reader(csv_file)
@@ -133,6 +138,7 @@ def get_glossary_list():
 
     glossary_list = sorted(glossary_list, key=len)
 
+    # Eliminate simple plural keywords which its original form appeared in the file
     glossary_list_no_repeat = []
     for word in glossary_list:
         if word not in glossary_list_no_repeat and len(word) != 0:
@@ -167,23 +173,6 @@ def string_similarity(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 
-def get_doc_vector(string):
-    """
-    Function for getting document vector using Gensim Doc2Vec
-    :param string: document pass in
-    :return: document vector (768 in dimension)
-    """
-    docs = []
-    analyzedDocument = namedtuple('AnalyzedDocument', 'words tags')
-    sentences = tokenize.sent_tokenize(string)
-
-    docs.append(analyzedDocument(sentences, [0]))
-    doc_model = doc2vec.Doc2Vec(docs, vector_size=768, window=300, min_count=1, workers=4)
-
-    doc_vec = doc_model.dv[0]
-    return doc_vec
-
-
 def get_top_keywords(glossary_list, scores, n=10):
     """
     get top n keywords based on corresponding scores
@@ -192,20 +181,19 @@ def get_top_keywords(glossary_list, scores, n=10):
     :param n: number of keywords for output
     :return: n number of highest score keywords
     """
+    # Sort list with built-in sorted() and return top n
     score_list = [(glossary_list[i], scores[i]) for i in range(len(glossary_list))]
     score_list = sorted(score_list, key=lambda x: x[1], reverse=True)
     if len(score_list) < n:
         return [keyword[0] for keyword in score_list]
-    # print(score_list[:n])
     return [keyword[0] for keyword in score_list[:n]]
 
 
 def main():
     extractor = KeywordExtractor()
-    n = 30
+    n = 60
 
     publications = get_multi_publications(n)
-    total_accuracy = 0
     for publication in publications:
 
         publication_id = publication[0]
@@ -214,12 +202,6 @@ def main():
         ref_keywords = get_publication_keywords(publication_id)
 
         print_result(publication_id, abstract, keywords, ref_keywords)
-        accuracy = get_keyword_accuracy(keywords, ref_keywords)
-        print("ACCURACY: " + str(accuracy) + "%\n\n")
-
-        total_accuracy += accuracy
-
-    print("AVERAGE ACCURACY ------------- " + str(int(total_accuracy / n)) + "%")
 
 
 if __name__ == '__main__':
