@@ -1,12 +1,13 @@
 from print_helper import print_result
 from Trie import Trie
-from trie_utils import construct_trie, get_matches_overlap
 from Aho_Corasick import AhoCorasick
 from difflib import SequenceMatcher
 import csv
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from database import get_multi_publications, get_publication_keywords
+
+import time
 
 
 model = SentenceTransformer('sentence-transformers/paraphrase-mpnet-base-v2')
@@ -28,9 +29,11 @@ class KeywordExtractor:
     """
     def __init__(self):
         self.glossary_list = get_glossary_list()
-        # self.trie = construct_trie(self.glossary_list)
+
         self.trie = Trie()
         self.trie.init_with_list(self.glossary_list)
+
+        # self.aho = AhoCorasick(self.glossary_list)
 
     def get_glossary_in_string(self, string):
         """
@@ -39,14 +42,10 @@ class KeywordExtractor:
         :return: python list of keywords appeared in pass in string
         """
 
-        # return [glossary for glossary in glossary_list if glossary in string.lower()]
-
-        # matches = get_matches_overlap(string, self.trie)
         matches = self.trie.string_match(string)
         return matches
 
-        # aho = AhoCorasick(glossary_list)
-        # result = aho.search_words(string)
+        # result = self.aho.search_words(string)
         # return list(result.keys())
 
     def extract_from_single_text(self, string):
@@ -190,7 +189,10 @@ def get_top_keywords(glossary_list, scores, n=10):
 
 
 def main():
+    start = time.time()
     extractor = KeywordExtractor()
+    end = time.time()
+    print("KeywordExtractor Init: {:.2f}s\n".format(end - start))
     n = 60
 
     publications = get_multi_publications(n)
@@ -198,7 +200,10 @@ def main():
 
         publication_id = publication[0]
         abstract = publication[1]
+        start = time.time()
         keywords = extractor.extract_from_single_text(abstract)
+        end = time.time()
+        print("Extraction Time: {:.2f}s".format(end - start))
         ref_keywords = get_publication_keywords(publication_id)
 
         print_result(publication_id, abstract, keywords, ref_keywords)
